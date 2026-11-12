@@ -1,5 +1,5 @@
+import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View, TouchableOpacity, SafeAreaView, StatusBar, ScrollView } from 'react-native';
 
 export default function App() {
@@ -7,16 +7,40 @@ export default function App() {
   const [listaTarefas, setListaTarefas] = useState([]);
 
   const adicionarTarefa = () => {
-    if (tarefaAtual.trim() !== '') {
-      setListaTarefas([...listaTarefas, tarefaAtual]);
-      setTarefaAtual('');
+    if (tarefaAtual.trim() === '') {
+      return;      
     }
+    const novaLista = [...listaTarefas, tarefaAtual];
+    setListaTarefas(novaLista);
+    setTarefaAtual('');
+    salvarDadosLocal(novaLista);
   };
 
-  const salvarTeste = async () => {
-    await AsyncStorage.setItem('chave_secreta', 'Felipe');
-    console.log('Teste salvo no cofre!');
-}
+const salvarDadosLocal = async (listaDeDados) => {
+  try{
+    const dadosJSON = JSON.stringify(listaDeDados);
+    await AsyncStorage.setItem('minhas_tarefas', dadosJSON);
+  }catch (erro){
+    console.error("Erro ao salvar dados", erro);
+  }
+};
+
+const resgatarDadosLocal = async () => {
+  try{
+    const dadosJSONLidos = await AsyncStorage.getItem('minhas_tarefas');
+    if( dadosJSONLidos !== null) {
+      setListaTarefas(JSON.parse(dadosJSONLidos));
+    }
+  }catch (error){
+    console.error("Erro ao resgatar", erro);
+  }
+};
+
+useEffect(() => {
+    // O código aqui dentro rodará assim que o celular acender!
+    resgatarDadosLocal();
+}, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
@@ -48,7 +72,7 @@ export default function App() {
         <TouchableOpacity
           activeOpacity={0.8}
           style={styles.addButton}
-          onPress={() => {adicionarTarefa(), salvarTeste()}}
+          onPress={adicionarTarefa}
         >
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
